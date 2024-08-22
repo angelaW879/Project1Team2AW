@@ -12,27 +12,36 @@ const ChatPage = () => {
     useEffect(() => {
         const fetchChats = async () => {
             try {
-                const response = await fetch(`${config.BASE_URL}/api/chats/receiver/${user?.userId}`, {
+               const receiverResponse = await fetch(`${config.BASE_URL}/api/chats/receiver/${user?.userId}`, {
                     credentials: 'include',
                 });
-                if (response.ok) {
-                    const data = await response.json();
-                    
-                 
-                    const chatRoomsMap = new Map();
-                    
-                    data.forEach((chat: Chat) => {
+                const senderResponse = await fetch(`${config.BASE_URL}/api/chats/sender/${user?.userId}`, {
+                    credentials: 'include',
+                });
+
+                const chatRoomsMap = new Map();
+
+                if (receiverResponse.ok) {
+                    const receiverData = await receiverResponse.json();
+                    receiverData.forEach((chat: Chat) => {
                         const key = chat.senderId !== user?.userId ? chat.senderId : chat.receiverId;
                         if (!chatRoomsMap.has(key)) {
                             chatRoomsMap.set(key, chat);
                         }
                     });
-                    
-              
-                    setChats(Array.from(chatRoomsMap.values()));
-                } else {
-                    console.error('Failed to fetch chat rooms');
                 }
+
+                if (senderResponse.ok) {
+                    const senderData = await senderResponse.json();
+                    senderData.forEach((chat: Chat) => {
+                        const key = chat.receiverId !== user?.userId ? chat.receiverId : chat.senderId;
+                        if (!chatRoomsMap.has(key)) {
+                            chatRoomsMap.set(key, chat);
+                        }
+                    });
+                }
+
+                setChats(Array.from(chatRoomsMap.values()));
             } catch (error) {
                 console.error('Error fetching chat rooms:', error);
             }
